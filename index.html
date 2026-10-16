@@ -10,6 +10,8 @@
 <meta name="apple-mobile-web-app-title" content="Planer">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#ffffff">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
@@ -549,43 +551,15 @@ const mkLesson = t => ({ id: uid(), title: t, note: '', status: '', exam: /^test
 function mkUnit(classId, title, titles, start) {
   return { id: uid(), classId, title, start: start || '', lessons: titles.map(mkLesson) };
 }
-function sampleState() {
-  const s = emptyState();
-  s.classes = [
-    { id: 'c1', name: 'Ma 7', subject: 'mathe' },
-    { id: 'c2', name: 'En 8', subject: 'englisch' },
-  ];
-  s.timetables[0].slots = {
-    1: { '3-4': 'c1', '5-6': 'c2' },
-    2: { '4-5': 'c2' },
-    3: { '3-4': 'c1' },
-    4: { '5-6': 'c2' },
-    5: { '1-2': 'c1' },
-  };
-  const terme = mkUnit('c1', 'Terme und Gleichungen', ['Was sind Terme?', 'Terme aufstellen', 'Terme berechnen durch Einsetzen', 'Gleichartige Terme zusammenfassen', 'Terme multiplizieren', 'Klammern auflösen', 'Übung: Lerntheke', 'Gleichungen – Waagemodell', 'Äquivalenzumformungen', 'Klassenarbeit'], START);
-  terme.lessons.forEach((l, i) => { l.status = i < 3 ? 'done' : i < 5 ? 'wip' : ''; });
-  const prozent = mkUnit('c1', 'Prozentrechnung', ['Anteile und Prozente', 'Grundbegriffe: G, W, p %', 'Prozentwert berechnen', 'Grundwert berechnen', 'Prozentsatz berechnen', 'Prozentstreifen & Dreisatz', 'Vermischte Übungen', 'Test']);
-  const london = mkUnit('c2', 'Unit 2: Welcome to London', ['Intro & vocabulary', 'Present perfect – form', 'Present perfect vs. simple past', 'Reading: A day in London', 'Writing a postcard', 'Test'], START);
-  london.lessons.forEach((l, i) => { l.status = i < 2 ? 'done' : i < 3 ? 'wip' : ''; });
-  const shop = mkUnit('c2', 'Unit 3: Shopping & money', ['Vocabulary: shops', 'Dialogues: at the shop', 'Comparatives', 'Listening: a market', 'Role play', 'Test']);
-  s.units = [terme, prozent, london, shop];
-  return s;
-}
-
 let state = emptyState();
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
 function load() {
   let raw = null;
   try { raw = localStorage.getItem(STORE_KEY); } catch (e) {}
+  // ohne gespeicherten Stand startet der Planer leer
+  state = emptyState();
   if (raw) {
-    try { state = Object.assign(emptyState(), JSON.parse(raw)); } catch (e) { state = sampleState(); }
-  } else {
-    state = sampleState();
-  }
-  if (!raw) {
-    placeUnit(state.units[0].id, START, false);
-    placeUnit(state.units[2].id, START, false);
-  } else {
+    try { state = Object.assign(emptyState(), JSON.parse(raw)); } catch (e) {}
     fitToGrid();   // Einträge aus älteren Rastern auf das aktive Raster übertragen
   }
   state.grid = ACTIVE_GRID;
@@ -1257,7 +1231,7 @@ function renderTTModal() {
     <h4>Daten</h4>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn small" onclick="resetPlan()">Planung leeren (Klassen &amp; Stundenplan bleiben)</button>
-      <button class="btn small" onclick="loadSample()">Beispieldaten neu laden</button>
+      <button class="btn small danger" onclick="resetAll()">Alles löschen (Neustart)</button>
     </div>
     <div class="modal-actions"><button class="btn primary" onclick="closeModal()">Fertig</button></div>`;
   box.innerHTML = h;
@@ -1329,10 +1303,10 @@ function resetPlan() {
   Object.assign(state, { units: [], placements: {}, cancelled: {}, weekNotes: {}, weekEvents: {}, freeDays: defaultFreeDays() });
   save(); render(); renderTTModal();
 }
-function loadSample() {
-  if (!confirm('Alle aktuellen Daten durch die Beispieldaten ersetzen?')) return;
+function resetAll() {
+  if (!confirm('Wirklich ALLES löschen – Klassen, Stundenplan, Reihen, Notizen? Tipp: vorher exportieren.')) return;
   try { localStorage.removeItem(STORE_KEY); } catch (e) {}
-  load(); ttSel = null; save(); closeModal(); render();
+  load(); ttSel = null; brush = null; save(); closeModal(); render();
 }
 
 // =====================================================================
