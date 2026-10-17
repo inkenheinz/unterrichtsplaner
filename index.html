@@ -171,7 +171,7 @@
   .slot.cls:hover { border-color: var(--accent); background: var(--accent-light); }
   .slot.filled { border: none; padding: 0; background: transparent; }
   .slot.filled .slot-no { display: none; }
-  .slot-empty { font-size: 11px; color: var(--text3); }
+  .slot-empty { font-size: 11px; color: var(--text3); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .slot.cancelled { background: repeating-linear-gradient(-45deg, var(--cancel-bg), var(--cancel-bg) 5px, #fff 5px, #fff 10px); border: 1px solid #f0cbd7; }
   .cancel-tag { font-size: 11px; color: var(--cancel); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .slot.drop-over { outline: 2px solid var(--accent); outline-offset: 1px; background: var(--accent-light) !important; }
@@ -224,6 +224,8 @@
 
   .editable-item { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px; font-size: 12px; margin-bottom: 4px; border: 1px solid var(--border); background: white; }
   .editable-item:focus-within { border-color: var(--accent); }
+  .ev-day { font: inherit; font-size: 11px; font-weight: 600; color: var(--text2); border: 1px solid var(--border); border-radius: 5px; background: var(--surface2); padding: 1px 2px; flex-shrink: 0; max-width: 92px; }
+  .ev-mark { font-size: 10.5px; font-weight: 600; color: var(--text2); background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 0 6px; min-width: 0; flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: center; }
   .chip-text { flex: 1; outline: none; cursor: text; min-height: 1.2em; white-space: pre-wrap; }
   .chip-btn { border: none; background: none; cursor: pointer; color: var(--text3); font-size: 10px; }
   .chip-btn:hover { color: var(--cancel); }
@@ -267,7 +269,7 @@
   .exam-toggle.test { border: 1px solid var(--exam); color: var(--exam); }
   .exam-toggle.ka { background: var(--exam); border: 1px solid var(--exam); color: white; }
   .free-badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 6px; background: white; border: 1px solid var(--border); color: var(--text2); font-weight: 600; margin: 0 4px 4px 0; }
-  .y-empty { font-size: 11.5px; color: var(--text3); }
+  .y-empty { display: block; font-size: 11.5px; font-style: italic; color: var(--text3); }
 
   /* ---------- Reihen ---------- */
   .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; align-items: start; margin-bottom: 28px; }
@@ -515,19 +517,18 @@ function weekdayRange(from, to, label, target) {
   return target;
 }
 // Ferien aus "Planer 2026 2027.pdf"
-function defaultFreeDays() {
+// Ferien/freie Tage trägt die Lehrkraft selbst tageweise im Wochenplaner ein
+function defaultFreeDays() { return {}; }
+// früher automatisch vorbelegte Ferien – werden aus älteren Ständen einmalig entfernt
+function legacyHolidays() {
   const f = {};
   weekdayRange('2026-12-21', '2027-01-01', 'Weihnachtsferien', f);
   weekdayRange('2027-02-08', '2027-02-19', 'Winterferien', f);
-  f['2027-03-08'] = 'frei';
   weekdayRange('2027-03-24', '2027-04-02', 'Osterferien', f);
-  f['2027-05-06'] = 'Himmelfahrt';
-  f['2027-05-07'] = 'Brückentag';
-  f['2027-05-14'] = 'frei';
-  f['2027-05-17'] = 'Pfingsten';
-  f['2027-05-18'] = 'Pfingsten';
+  Object.assign(f, { '2027-03-08': 'frei', '2027-05-06': 'Himmelfahrt', '2027-05-07': 'Brückentag', '2027-05-14': 'frei', '2027-05-17': 'Pfingsten', '2027-05-18': 'Pfingsten' });
   return f;
 }
+const FREE_LABELS = ['Ferien', 'Feiertag', 'Sonstiges'];
 const uid = () => 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 // =====================================================================
@@ -564,9 +565,16 @@ function load() {
   }
   state.grid = ACTIVE_GRID;
   delete state.gridChosen;
+  if (!state.legacyHolidaysRemoved) {
+    const old = legacyHolidays();
+    Object.keys(state.freeDays).forEach(d => { if (old[d] === state.freeDays[d]) delete state.freeDays[d]; });
+    state.legacyHolidaysRemoved = true;
+  }
   // ältere Stände: Farbe pro Klasse/Reihe → Fach pro Klasse
   state.classes.forEach(c => { if (!c.subject) c.subject = guessSubject(c.name); });
   state.units.forEach(u => u.lessons.forEach(l => { if (l.status === undefined) l.status = ''; if (l.exam === undefined) l.exam = ''; }));
+  // ältere Stände: Termine als reiner Text → { d: Datum (leer = ganze Woche), t: Text }
+  Object.values(state.weekEvents).forEach(list => list.forEach((e, i) => { if (typeof e === 'string') list[i] = { d: '', t: e }; }));
   if (state.week < START || state.week > lastWeek()) state.week = START;
   if (state.classFilter !== 'all' && !state.classes.find(c => c.id === state.classFilter)) state.classFilter = 'all';
 }
@@ -598,7 +606,32 @@ function cycleStatus(e, lessonId) {
 function setLessonField(lessonId, field, value) { lessonInfo(lessonId).lesson[field] = value; save(); }
 function cycleExam(lessonId) { const l = lessonInfo(lessonId).lesson; l.exam = { '': 'test', test: 'ka', ka: '' }[l.exam || '']; save(); render(); }
 const visibleClasses = () => state.classFilter === 'all' ? state.classes : state.classes.filter(c => c.id === state.classFilter);
-const visibleUnits = () => state.units.filter(u => state.classFilter === 'all' || u.classId === state.classFilter);
+// Einzelstunden (ohne Reihe) sind intern Mini-Reihen mit single:true und genau einer Stunde
+const visibleUnits = (singles = false) => state.units.filter(u => !!u.single === singles && (state.classFilter === 'all' || u.classId === state.classFilter));
+function addSingle(key, classId, title) {
+  title = (title || '').trim();
+  if (!title) { showToast('Bitte ein Stundenthema eintragen'); return; }
+  if (!classId) { showToast('Bitte eine Klasse wählen'); return; }
+  const l = { id: uid(), title, status: '', exam: '', note: '' };
+  const u = { id: uid(), title, classId, single: true, start: dateOf(key), lessons: [l] };
+  state.units.push(u);
+  const prev = state.placements[key];
+  state.placements[key] = l.id;
+  closePop(); save(); render();
+  showToast(prev ? 'Einzelstunde eingetragen – die vorherige Stunde ist wieder offen' : 'Einzelstunde eingetragen');
+}
+function setLessonTitle(lessonId, v) {
+  const info = lessonInfo(lessonId);
+  info.lesson.title = v || 'Stunde';
+  if (info.unit.single) info.unit.title = info.lesson.title;
+  save();
+}
+function deleteSingle(unitId) {
+  const u = unitById(unitId);
+  u.lessons.forEach(l => unplace(l.id));
+  state.units = state.units.filter(x => x.id !== unitId);
+  closePop(); save(); render();
+}
 
 // ---------- Stundenplan-Versionen ----------
 const sortedTT = () => state.timetables.slice().sort((a, b) => a.from < b.from ? -1 : 1);
@@ -722,6 +755,22 @@ function setFreeDay(date, label, shift) {
   closePop(); save(); render();
 }
 function unsetFreeDay(date) { delete state.freeDays[date]; closePop(); save(); render(); }
+// ganze Woche frei: Stunden rücken je Klasse hinter die Woche
+function setFreeWeek(mon, label) {
+  const byClass = {};
+  for (let i = 0; i < 5; i++) {
+    const d = addDays(mon, i);
+    SLOTS[dow(d)].map(s => keyOf(d, s)).filter(k => state.placements[k]).sort(keyCmp).forEach(k => {
+      const id = state.placements[k]; delete state.placements[k];
+      const c = lessonClass(id); (byClass[c] = byClass[c] || []).push(id);
+    });
+    state.freeDays[d] = label || 'Ferien';
+  }
+  let rest = [];
+  for (const [c, ids] of Object.entries(byClass)) rest = rest.concat(shiftInto(classSlots(c, addDays(mon, 7)), ids));
+  reportOverflow(rest);
+  closePop(); save(); render();
+}
 
 // Einträge mit Stunden, die es im aktiven Raster nicht (mehr) gibt, auf die zeitlich passende Stunde übertragen
 function fitToGrid() {
@@ -802,10 +851,12 @@ function renderWeek() {
   const openUnits = visibleUnits().filter(u => unitStats(u, placed).placed < u.lessons.length);
   let side = `<div class="side-title"><span class="muted" style="font-size:12px">offene Stunden zum Einplanen</span><button class="add-btn" onclick="openNewUnit()">＋ Reihe</button></div>`;
   const vc = visibleClasses();
-  if (!openUnits.length) side += `<div class="card" style="padding:12px;font-size:12.5px;color:var(--text2)">Alle Reihen sind vollständig im Planer. Neue Reihen oder zurückgestellte Stunden erscheinen hier.</div>`;
+  const openSingles = visibleUnits(true).filter(u => !placed[u.lessons[0].id]);
+  if (!openUnits.length && !openSingles.length) side += `<div class="card" style="padding:12px;font-size:12.5px;color:var(--text2)">Alle Reihen sind vollständig im Planer. Neue Reihen oder zurückgestellte Stunden erscheinen hier.</div>`;
   vc.forEach(c => {
     const units = openUnits.filter(u => u.classId === c.id);
-    if (!units.length) return;
+    const singles = openSingles.filter(u => u.classId === c.id);
+    if (!units.length && !singles.length) return;
     if (vc.length > 1) side += `<div class="side-class"><span class="cdot" style="background:${classSubj(c).dot}"></span>${escHtml(c.name)}</div>`;
     units.forEach(u => {
       const st = unitStats(u, placed);
@@ -819,6 +870,8 @@ function renderWeek() {
         ${unpl.length ? `<div class="us-actions"><button class="btn small primary" onclick="openInsert('${u.id}')">${st.placed ? 'Rest übertragen…' : 'Startdatum festlegen…'}</button></div>` : ''}
       </div>`;
     });
+    if (singles.length) side += `<div class="unit-side single-side"><div class="us-meta">Einzelstunden ohne Termin – auf eine Stunde ziehen</div><div class="unplaced">${singles.map(u =>
+      `<span class="mini-chip" style="${unitVars(u)}" draggable="true" ondragstart="dragStart(event,'lesson','${u.lessons[0].id}')" title="${escAttr(u.title)}">${escHtml(u.title)}<button class="chip-btn" onclick="deleteSingle('${u.id}')" title="Einzelstunde löschen">✕</button></span>`).join('')}</div></div>`;
   });
 
   // Grid
@@ -826,7 +879,9 @@ function renderWeek() {
   for (let d = 1; d <= 5; d++) {
     const date = addDays(mon, d - 1);
     const exams = SLOTS[d].map(s => state.placements[keyOf(date, s)]).filter(Boolean).map(lessonInfo).filter(i => i && i.lesson.exam);
-    g += `<div class="day-head ${date === today ? 'today' : ''}" style="grid-column:${d + 1}" onclick="dayClick(event,'${date}')"><span class="dn">${DAY_FULL[d]}</span><span class="dd">${ddmm(date)}</span>
+    const evs = eventsOn(date);
+    g += `<div class="day-head ${date === today ? 'today' : ''}" style="grid-column:${d + 1}" onclick="dayClick(event,'${date}')" title="Tag ausblocken (Ferien, Feiertag …)"><span class="dn">${DAY_FULL[d]}</span><span class="dd">${ddmm(date)}</span>
+      ${evs.length ? `<span class="ev-mark" title="${escAttr(evs.map(x => x.t).join(' · '))}">${escHtml(evs.map(x => x.t).join(' · '))}</span>` : ''}
       ${exams.map(i => `<span class="exam-badge ${i.lesson.exam}" title="${EXAMS[i.lesson.exam]}">${EXAM_SHORT[i.lesson.exam]} ${escHtml(className(i.unit.classId))}</span>`).join('')}</div>`;
   }
   for (let p = 1; p <= 9; p++) g += `<div class="period-no" style="grid-row:${p + 1}">${p}</div>`;
@@ -854,11 +909,11 @@ function renderWeek() {
         const l = info.lesson;
         inner += `<div class="chip st-${l.status || 'open'} ${l.exam ? 'has-exam' : ''}" style="${unitVars(info.unit)}" draggable="true" ondragstart="dragStart(event,'lesson','${lessonId}')" onclick="lessonClick(event,'${lessonId}')">
           <span class="chip-no">${slotLabel(s)}</span>
-          <span class="chip-meta">${examBadge(l)}<b>${escHtml(className(info.unit.classId))}</b> · ${escHtml(info.unit.title)} ${info.idx + 1}/${info.unit.lessons.length}</span>
+          <span class="chip-meta">${examBadge(l)}<b>${escHtml(className(info.unit.classId))}</b>${info.unit.single ? '' : ` · ${escHtml(info.unit.title)} ${info.idx + 1}/${info.unit.lessons.length}`}</span>
           <span class="chip-title">${escHtml(info.lesson.title)}</span></div>`;
       } else {
         classes += ' droppable';
-        if (c) inner += `${tag}<span class="slot-empty">frei</span>`;
+        if (c) inner += `${tag}<span class="slot-empty">noch nicht geplant</span>`;
       }
       g += `<div class="${classes}" style="grid-column:${d + 1};grid-row:${a + 1}/${b + 2}" data-key="${key}" onclick="slotClick(event,'${key}')">${inner}</div>`;
     });
@@ -868,7 +923,7 @@ function renderWeek() {
   const events = state.weekEvents[mon] || [];
   const hasNote = !!(state.weekNotes[mon] || '').trim();
   const panels = [
-    ['units', 'Reihen', openUnits.length ? `<b>${openUnits.length}</b>` : ''],
+    ['units', 'Reihen', openUnits.length + openSingles.length ? `<b>${openUnits.length + openSingles.length}</b>` : ''],
     ['notes', 'Notizen', hasNote ? '<b class="dotmark"></b>' : ''],
     ['events', 'Termine', events.length ? `<b>${events.length}</b>` : ''],
   ];
@@ -969,8 +1024,12 @@ function renderYear() {
   let rows = '';
   allWeeks().forEach((mon, wi) => {
     const fri = addDays(mon, 4);
-    const frees = []; let freeCount = 0;
-    for (let i = 0; i < 5; i++) { const d = addDays(mon, i); if (state.freeDays[d]) { freeCount++; if (!frees.includes(state.freeDays[d])) frees.push(state.freeDays[d]); } }
+    // freie Tage der Woche: ganze Woche → ein Badge, sonst pro Tag mit Wochentag
+    const freeDates = [0, 1, 2, 3, 4].map(i => addDays(mon, i)).filter(d => state.freeDays[d]);
+    const freeCount = freeDates.length;
+    const labels = [...new Set(freeDates.map(d => state.freeDays[d]))];
+    const wholeWeek = freeCount === 5 && labels.length === 1;
+    const frees = wholeWeek ? labels : [];
     const ttStart = ttFroms.find(f => f >= mon && f <= fri);
     const inWeek = entries.filter(([k]) => dateOf(k) >= mon && dateOf(k) <= fri);
     let cells = '';
@@ -984,14 +1043,17 @@ function renderYear() {
       const slots = classSlots(c.id, mon, fri);
       const used = slots.filter(k => state.placements[k]).length;
       let html = slots.length ? `<div class="yc-head"><span class="cap ${used === slots.length ? 'full' : ''}">${used}/${slots.length} Std.</span></div>` : '';
-      html += frees.map(f => `<span class="free-badge">${escHtml(f)}</span>`).join('');
+      // freie Tage nur bei Klassen zeigen, die an diesem Tag laut Stundenplan Unterricht hätten
+      const classFrees = wholeWeek ? frees
+        : freeDates.filter(d => SLOTS[dow(d)].some(s => classAt(d, s) === c.id)).map(d => `${DAY_SHORT[dow(d)]} ${ddmm(d)} · ${state.freeDays[d]}`);
+      html += classFrees.map(f => `<span class="free-badge">${escHtml(f)}</span>`).join('');
       groups.forEach(gr => {
-        html += `<div class="yu" style="${unitVars(gr.unit)}" onclick="gotoWeekOf('${mon}')"><b>${escHtml(gr.unit.title)}</b>
+        html += `<div class="yu ${gr.unit.single ? 'single' : ''}" style="${unitVars(gr.unit)}" onclick="gotoWeekOf('${mon}')">${gr.unit.single ? '' : `<b>${escHtml(gr.unit.title)}</b>`}
           ${gr.items.map(it => `<div class="yl ${it.info.lesson.exam ? 'ex' : ''}"><span class="yd">${DAY_SHORT[dow(dateOf(it.k))]}</span>${statusDot(it.info.lesson, `cycleStatus(event,'${it.info.lesson.id}')`)}<span>${examBadge(it.info.lesson)}${escHtml(it.info.lesson.title)}</span></div>`).join('')}</div>`;
       });
       const cx = Object.keys(state.cancelled).filter(k => dateOf(k) >= mon && dateOf(k) <= fri && classAt(dateOf(k), slotOf(k)) === c.id);
       html += cx.map(k => `<div class="yl cx"><span class="yd">${DAY_SHORT[dow(dateOf(k))]}</span><span>✕ ${escHtml(state.cancelled[k])}</span></div>`).join('');
-      if (!groups.size && slots.length && !cx.length) html += `<span class="y-empty">– frei –</span>`;
+      if (!groups.size && slots.length && !cx.length) html += `<span class="y-empty">noch nicht geplant</span>`;
       cells += `<td data-week="${mon}" data-class="${c.id}">${html}</td>`;
     });
     rows += `<tr class="${freeCount === 5 ? 'holiday' : ''} ${mon === curMon ? 'current' : ''} ${ttStart ? 'tt-change' : ''}">
@@ -1038,6 +1100,7 @@ function unitCard(u, placed) {
       <button class="add-btn" onclick="addLesson('${u.id}')">＋ Stunde</button>
       <div class="spacer"></div>
       ${st.placed ? `<button class="btn small" onclick="removeUnitFromPlan('${u.id}')">Aus Planer nehmen</button>` : ''}
+      <button class="btn small" onclick="copyUnitMenu(event,'${u.id}')">Kopieren…</button>
       <button class="btn small danger" onclick="deleteUnit('${u.id}')">Löschen</button>
     </div></div>`;
 }
@@ -1055,19 +1118,31 @@ function renderUnits() {
 }
 
 // ---------- Termine ----------
+// Termine einer Woche, nach Tag sortiert (ohne Tag = ganze Woche, zuerst)
+const sortedEvents = mon => (state.weekEvents[mon] || []).map((e, i) => ({ ...e, i })).sort((a, b) => (a.d || '').localeCompare(b.d || ''));
+const eventsOn = date => (state.weekEvents[mondayOf(date)] || []).filter(e => e.d === date);
 function eventList(mon) {
-  return (state.weekEvents[mon] || []).map((t, i) => `<div class="editable-item"><span class="chip-text" contenteditable="true" onkeydown="handleKey(event)" onblur="updateEvent('${mon}',${i},this)">${escHtml(t)}</span><button class="chip-btn" onclick="deleteEvent('${mon}',${i})">✕</button></div>`).join('');
+  return sortedEvents(mon).map(e => `<div class="editable-item">
+    <select class="ev-day" onchange="setEventDay('${mon}',${e.i},this.value)" title="Tag des Termins">
+      <option value="" ${e.d ? '' : 'selected'}>Woche</option>
+      ${[0, 1, 2, 3, 4].map(k => { const d = addDays(mon, k); return `<option value="${d}" ${e.d === d ? 'selected' : ''}>${DAY_SHORT[k + 1]} ${ddmm(d)}</option>`; }).join('')}
+    </select>
+    <span class="chip-text" contenteditable="true" onkeydown="handleKey(event)" onblur="updateEvent('${mon}',${e.i},this)">${escHtml(e.t)}</span><button class="chip-btn" onclick="deleteEvent('${mon}',${e.i})">✕</button></div>`).join('');
 }
-function addEvent(mon) {
-  (state.weekEvents[mon] = state.weekEvents[mon] || []).push('');
+// Anzeige ohne Bearbeitung (Jahresplanung)
+function eventLabel(e) { return e.d ? `<span class="ev-when">${DAY_SHORT[dow(e.d)]} ${ddmm(e.d)}</span> ${escHtml(e.t)}` : escHtml(e.t); }
+function addEvent(mon, date) {
+  (state.weekEvents[mon] = state.weekEvents[mon] || []).push({ d: date || '', t: '' });
+  const i = state.weekEvents[mon].length - 1;
   save(); render();
-  setTimeout(() => { const f = document.querySelectorAll(`[data-list="${mon}"] .chip-text`); if (f.length) f[f.length - 1].focus(); }, 10);
+  setTimeout(() => { const f = [...document.querySelectorAll(`[data-list="${mon}"] .chip-text`)].find(el => (el.getAttribute('onblur') || '').includes(`,${i},`)); if (f) f.focus(); }, 10);
 }
 function updateEvent(mon, i, el) {
   const v = el.innerText.trim();
   if (!v) { state.weekEvents[mon].splice(i, 1); save(); render(); return; }
-  state.weekEvents[mon][i] = v; save();
+  state.weekEvents[mon][i].t = v; save();
 }
+function setEventDay(mon, i, d) { state.weekEvents[mon][i].d = d; save(); render(); }
 function deleteEvent(mon, i) { state.weekEvents[mon].splice(i, 1); save(); render(); }
 
 // =====================================================================
@@ -1096,6 +1171,22 @@ function moveLessonInUnit(unitId, i, dir) {
   save(); render();
 }
 function removeUnitFromPlan(id) { unitById(id).lessons.forEach(l => unplace(l.id)); save(); render(); showToast('Reihe ist wieder „in Vorbereitung“'); }
+// Reihe als neue Reihe (in Vorbereitung, ohne Datum) in eine Klasse kopieren
+function copyUnitMenu(e, id) {
+  e.stopPropagation();
+  const u = unitById(id);
+  showPop(e.currentTarget, `<h4>Reihe kopieren</h4><div class="sub">„${escHtml(u.title)}“ mit allen ${u.lessons.length} Stunden kopieren nach …</div>
+    <div class="pop-actions">${state.classes.map(c => `<button class="btn ${c.id === u.classId ? '' : 'primary'}" onclick="copyUnit('${id}','${c.id}')"><span class="cdot" style="background:${classSubj(c).dot}"></span> ${escHtml(c.name)}${c.id === u.classId ? ' (gleiche Klasse)' : ''}</button>`).join('')}</div>`);
+}
+function copyUnit(id, classId) {
+  const u = unitById(id);
+  const copy = { ...JSON.parse(JSON.stringify(u)), id: uid(), classId, start: '' };
+  if (classId === u.classId) copy.title += ' (Kopie)';
+  copy.lessons.forEach(l => { l.id = uid(); });
+  state.units.splice(state.units.indexOf(u) + 1, 0, copy);
+  closePop(); save(); render();
+  showToast(`Kopiert nach ${className(classId)} – Startdatum wählen, dann übertragen`);
+}
 function deleteUnit(id) {
   if (!confirm('Reihe wirklich löschen? Eingeplante Stunden verschwinden aus dem Planer.')) return;
   unitById(id).lessons.forEach(l => unplace(l.id));
@@ -1145,7 +1236,7 @@ function openInsert(unitId, startDate, redistribute) {
   const placed = placedMap();
   openModal(`<h3>Reihe in den Planer übertragen</h3>
     <div class="sub">Jede Stunde kommt in die nächste freie Stunde der Klasse – nach dem jeweils gültigen Stundenplan. Ferien, freie Tage und Ausfälle werden übersprungen.</div>
-    <label>Reihe</label><select id="insUnit" onchange="updateInsertPreview()">${state.units.map(x => {
+    <label>Reihe</label><select id="insUnit" onchange="updateInsertPreview()">${state.units.filter(x => !x.single || x.id === u.id).map(x => {
       const st = unitStats(x, placed);
       return `<option value="${x.id}" ${x.id === unitId ? 'selected' : ''}>${escHtml(className(x.classId))} · ${escHtml(x.title)} (${st.placed}/${st.total})</option>`;
     }).join('')}</select>
@@ -1206,7 +1297,7 @@ function renderTTModal() {
       <input type="text" value="${escAttr(c.name)}" oninput="classById('${c.id}').name=this.value.trim()||'Klasse'; save(); render()" onblur="renderTTModal()">
       <span class="muted" style="font-size:11.5px">Fach</span>
       <select style="width:130px" onchange="classById('${c.id}').subject=this.value; save(); render(); renderTTModal()">${SUBJECT_KEYS.map(k => `<option value="${k}" ${k === c.subject ? 'selected' : ''}>${SUBJECTS[k].name}</option>`).join('')}</select>
-      <div class="spacer"></div><span class="muted" style="font-size:11.5px">${state.units.filter(u => u.classId === c.id).length} Reihen</span>
+      <div class="spacer"></div><span class="muted" style="font-size:11.5px">${state.units.filter(u => u.classId === c.id && !u.single).length} Reihen</span>
       <button class="btn small danger" onclick="deleteClass('${c.id}')">Löschen</button></div>`;
   });
   h += `</div><div style="margin-top:8px"><button class="add-btn" onclick="addClass()">＋ Klasse</button></div>
@@ -1340,22 +1431,24 @@ function lessonClick(e, lessonId) {
   e.stopPropagation();
   const info = lessonInfo(lessonId); const key = placedMap()[lessonId];
   const l = info.lesson;
-  showPop(e.currentTarget, `<h4 style="color:${classSubj(classById(info.unit.classId)).fg}">${escHtml(className(info.unit.classId))} · ${escHtml(info.unit.title)}</h4>
-    <div class="sub">Stunde ${info.idx + 1}/${info.unit.lessons.length} · ${fmtKey(key)}</div>
+  const single = !!info.unit.single;
+  showPop(e.currentTarget, `<h4 style="color:${classSubj(classById(info.unit.classId)).fg}">${escHtml(className(info.unit.classId))}${single ? '' : ` · ${escHtml(info.unit.title)}`}</h4>
+    <div class="sub">${single ? '' : `Stunde ${info.idx + 1}/${info.unit.lessons.length} · `}${fmtKey(key)}</div>
     <label>Planungsstand</label>
     ${choiceRow(lessonId, 'status', [['', 'offen'], ['wip', 'in Arbeit'], ['done', 'fertig']], l.status || '')}
     <label>Leistungsnachweis</label>
     ${choiceRow(lessonId, 'exam', [['', 'keiner'], ['test', 'Test'], ['ka', 'Klassenarbeit']], l.exam || '')}
-    <label>Stundenthema</label><input type="text" value="${escAttr(info.lesson.title)}" oninput="lessonInfo('${lessonId}').lesson.title=this.value||'Stunde'; save()" onkeydown="if(event.key==='Enter') closePop(true)">
+    <label>Stundenthema</label><input type="text" value="${escAttr(info.lesson.title)}" oninput="setLessonTitle('${lessonId}', this.value)" onkeydown="if(event.key==='Enter') closePop(true)">
     <label>Notiz</label><textarea oninput="lessonInfo('${lessonId}').lesson.note=this.value; save()" placeholder="Material, Hausaufgaben…">${escHtml(info.lesson.note || '')}</textarea>
     <div class="pop-actions">
       <div class="pop-row"><button class="btn" onclick="moveStep('${lessonId}',-1)">← eine Stunde früher</button><button class="btn" onclick="moveStep('${lessonId}',1)">eine später →</button></div>
       <div class="pop-sep"></div>
       <label style="margin-top:2px">Stunde fällt aus – Grund</label><input type="text" id="cReason" value="Ausfall">
       <button class="btn" onclick="cancelSlot('${key}', document.getElementById('cReason').value, 'shift')">✕ Fällt aus · Folgestunden rücken nach</button>
-      <button class="btn" onclick="cancelSlot('${key}', document.getElementById('cReason').value, 'park')">✕ Fällt aus · Stunde zurück in die Reihe</button>
+      <button class="btn" onclick="cancelSlot('${key}', document.getElementById('cReason').value, 'park')">✕ Fällt aus · Stunde ${single ? 'ohne Termin aufheben' : 'zurück in die Reihe'}</button>
       <div class="pop-sep"></div>
-      <button class="btn danger" onclick="unplace('${lessonId}'); closePop(); save(); render()">Aus dem Planer nehmen</button>
+      ${single ? `<button class="btn danger" onclick="deleteSingle('${info.unit.id}')">Einzelstunde löschen</button>`
+        : `<button class="btn danger" onclick="unplace('${lessonId}'); closePop(); save(); render()">Aus dem Planer nehmen</button>`}
     </div>`);
 }
 function slotClick(e, key) {
@@ -1373,13 +1466,18 @@ function slotClick(e, key) {
   // offene Stunden – die der Klasse dieses Slots zuerst
   const groups = state.classes.slice().sort((a, b) => (b.id === cId) - (a.id === cId)).map(c => {
     const opts = [];
-    state.units.filter(u => u.classId === c.id).forEach(u => u.lessons.forEach((l, i) => { if (!placed[l.id]) opts.push(`<option value="${l.id}">${escHtml(u.title)} · ${i + 1}. ${escHtml(l.title)}</option>`); }));
+    state.units.filter(u => u.classId === c.id).forEach(u => u.lessons.forEach((l, i) => { if (!placed[l.id]) opts.push(`<option value="${l.id}">${u.single ? escHtml(l.title) : `${escHtml(u.title)} · ${i + 1}. ${escHtml(l.title)}`}</option>`); }));
     return opts.length ? `<optgroup label="${escAttr(c.name)}">${opts.join('')}</optgroup>` : '';
   }).join('');
   showPop(el, `<h4>${fmtKey(key)}</h4><div class="sub">${cId ? `${escHtml(className(cId))} · noch frei` : 'kein Unterricht laut Stundenplan (z. B. Vertretung)'}</div>
     ${groups ? `<label>Stunde einsetzen</label><select id="popLesson">${groups}</select>
       <div class="pop-actions"><button class="btn primary" onclick="moveLesson(document.getElementById('popLesson').value,'${key}'); closePop(); save(); render()">Einsetzen</button></div>`
-      : `<div class="sub">Keine offenen Stunden – lege eine Reihe an oder ziehe eine Stunde hierher.</div>`}
+      : `<div class="sub">Keine offenen Stunden aus Reihen.</div>`}
+    ${state.classes.length ? `<div class="pop-actions"><div class="pop-sep"></div></div>
+    <label>Einzelstunde ohne Reihe – Stundenthema</label>
+    <input type="text" id="sgTitle" placeholder="z. B. Übung" onkeydown="if(event.key==='Enter') document.getElementById('sgBtn').click()">
+    ${cId ? `<input type="hidden" id="sgClass" value="${cId}">` : `<select id="sgClass">${state.classes.map(c => `<option value="${c.id}">${escHtml(c.name)}</option>`).join('')}</select>`}
+    <div class="pop-actions"><button class="btn ${groups ? '' : 'primary'}" id="sgBtn" onclick="addSingle('${key}', document.getElementById('sgClass').value, document.getElementById('sgTitle').value)">＋ Einzelstunde eintragen</button></div>` : ''}
     ${cId ? `<div class="pop-actions"><div class="pop-sep"></div><label style="margin-top:2px">Fällt aus – Grund</label><input type="text" id="cReason" value="Ausfall">
       <button class="btn" onclick="cancelSlot('${key}', document.getElementById('cReason').value, 'park')">✕ Als Ausfall markieren</button></div>` : ''}`);
 }
@@ -1391,12 +1489,16 @@ function dayClick(e, date) {
     return;
   }
   const n = SLOTS[dow(date)].filter(s => state.placements[keyOf(date, s)]).length;
-  showPop(e.currentTarget, `<h4>${DAY_FULL[dow(date)]}, ${ddmm(date)}</h4><div class="sub">Ganzen Tag als frei markieren (Ferien, Wandertag, Studientag…)</div>
-    <label>Bezeichnung</label><input type="text" id="fdLabel" value="Wandertag" autofocus>
+  showPop(e.currentTarget, `<h4>${DAY_FULL[dow(date)]}, ${ddmm(date)}</h4><div class="sub">Tag komplett ausblocken – es findet kein Unterricht statt</div>
+    <div class="choice" style="flex-wrap:wrap">${FREE_LABELS.map((l, i) => `<button class="${i === 0 ? 'active' : ''}" onclick="document.getElementById('fdLabel').value='${l}'; this.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === this))">${l}</button>`).join('')}</div>
+    <label>Bezeichnung</label><input type="text" id="fdLabel" value="${FREE_LABELS[0]}">
     <div class="pop-actions">
       ${n ? `<button class="btn" onclick="setFreeDay('${date}', document.getElementById('fdLabel').value, true)">Tag frei · ${n} Stunde(n) rücken nach</button>
       <button class="btn" onclick="setFreeDay('${date}', document.getElementById('fdLabel').value, false)">Tag frei · Stunden zurück in die Reihe</button>`
-      : `<button class="btn primary" onclick="setFreeDay('${date}', document.getElementById('fdLabel').value, true)">Tag als frei markieren</button>`}
+      : `<button class="btn primary" onclick="setFreeDay('${date}', document.getElementById('fdLabel').value, true)">Tag ausblocken</button>`}
+      <div class="pop-sep"></div>
+      <button class="btn" onclick="closePop(); state.sidePanel='events'; addEvent('${mondayOf(date)}','${date}')">＋ Termin an diesem Tag</button>
+      <button class="btn" onclick="setFreeWeek('${mondayOf(date)}', document.getElementById('fdLabel').value)">Ganze Woche (Mo–Fr) ausblocken</button>
     </div>`);
 }
 
