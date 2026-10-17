@@ -205,6 +205,26 @@
   .choice button.exam-test.active { background: white; border-color: var(--exam); color: var(--exam); }
   .choice button.exam-ka.active { background: var(--exam); border-color: var(--exam); color: white; }
   .chip:hover { box-shadow: var(--shadow-md); }
+  /* Vertretung + geteilte Kachel */
+  .slot-split { display: flex; gap: 4px; min-width: 0; }
+  .slot-split > .slot { flex: 1 1 0; min-width: 0; }
+  .slot-split.two > .slot { padding-left: 8px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; }
+  .slot-split.two > .slot .slot-no { display: none; }
+  .slot-split.two > .slot.filled { padding: 0; }
+  .slot-split.two .chip { padding-left: 9px; }
+  .slot-split.two .chip .chip-no { display: none; }
+  .slot-split.two .chip-meta { white-space: normal; line-height: 1.25; }
+  .slot-split.two .ctag, .slot-split.two .cancel-tag { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .sub-badge { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; padding: 0 4px; border-radius: 4px; margin-right: 5px; background: #ece8f6; color: #5b4c94; vertical-align: 1px; }
+  .sub-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-width: 0; }
+  .chip.sub-foreign { --u-dot: #9a95a6; --u-fg: #4b4658; border-style: dashed; border-left-style: solid; cursor: pointer; }
+  .pin-btn { position: absolute; top: 3px; right: 3px; border: none; background: none; cursor: pointer; font-size: 11px; line-height: 1; padding: 2px; opacity: .3; filter: grayscale(1); }
+  .pin-btn:hover { opacity: .7; }
+  .pin-btn.on { opacity: 1; filter: none; }
+  .chip.pinned { box-shadow: inset 0 0 0 1px var(--exam); }
+  .chip:has(.pin-btn) .chip-meta, .chip:has(.pin-btn) .chip-title { padding-right: 14px; }
+  label.check { display: flex; align-items: center; gap: 6px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+  label.check input { width: auto; margin: 0; }
   .chip .chip-no { position: absolute; left: 7px; top: 7px; font-size: 10.5px; opacity: .65; font-weight: 600; }
   .chip-meta { font-size: 10.5px; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
   .chip-title { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
@@ -237,9 +257,10 @@
   .pal-chip small { font-weight: 500; opacity: .75; }
   .year-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
   .year-table th { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 11.5px; font-weight: 700; color: var(--text2); position: sticky; top: var(--hh, 58px); z-index: 5; }
-  .year-table th:first-child { width: 118px; border-top-left-radius: var(--radius); }
-  .year-table th:last-child { width: 210px; border-top-right-radius: var(--radius); }
-  .year-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; border-right: 1px solid var(--border); }
+  .year-table th:first-child { width: 104px; border-top-left-radius: var(--radius); }
+  .year-table th:last-child { width: 128px; border-top-right-radius: var(--radius); }
+  .year-table th { padding: 10px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .year-table td { padding: 8px 8px; border-bottom: 1px solid var(--border); vertical-align: top; border-right: 1px solid var(--border); }
   .year-table td:last-child { border-right: none; }
   .year-table tr:last-child td { border-bottom: none; }
   .year-table tr.holiday td { background: var(--free-bg); }
@@ -254,13 +275,23 @@
   .yc-head { display: flex; justify-content: flex-end; margin-bottom: 2px; }
   .cap { font-size: 10.5px; font-variant-numeric: tabular-nums; color: var(--text3); }
   .cap.full { color: #4b8455; }
-  .yu { border-left: 3px solid var(--u-dot); padding: 1px 0 3px 9px; margin-bottom: 6px; cursor: pointer; }
-  .yu:hover { background: var(--surface2); border-radius: 0 6px 6px 0; }
-  .yu > b { font-size: 12.5px; font-weight: 700; display: block; color: var(--text); }
-  .yl { font-size: 12px; color: var(--text2); line-height: 1.5; display: flex; gap: 6px; }
-  .yl .yd { color: var(--text3); font-size: 11px; width: 22px; flex-shrink: 0; }
+  .yu { padding: 1px 2px 3px; margin-bottom: 6px; cursor: pointer; min-width: 0; }
+  .yu:hover { background: var(--surface2); border-radius: 6px; }
+  .yu > b { font-size: 12.5px; font-weight: 700; display: block; color: var(--text); overflow-wrap: break-word; hyphens: auto; }
+  /* Zeile fließt als Text: Tag, Punkt und Badge stehen vorn, der Titel nutzt die volle Breite */
+  .yl { font-size: 12px; color: var(--text2); line-height: 1.4; display: block; margin-top: 2px; overflow-wrap: break-word; hyphens: auto; }
+  .yl .yd { color: var(--text3); font-size: 11px; margin-right: 3px; }
+  .yl .st-dot { display: inline-block; vertical-align: -1px; margin: 0 4px 0 0; }
+  .yl .exam-badge { margin-right: 3px; }
+  /* Jahresplanung: schmale Termin-Spalte, Tag über dem Text */
+  .year-table .editable-item { flex-wrap: wrap; gap: 2px 4px; padding: 4px 6px; position: relative; }
+  .year-table .editable-item .chip-text { flex: 1 1 100%; min-width: 0; overflow-wrap: anywhere; }
+  .year-table .editable-item .chip-btn { position: absolute; top: 3px; right: 3px; }
+  .year-table .ev-day { max-width: calc(100% - 18px); }
+  .year-table td:last-child .add-btn { padding: 3px 8px; }
+  .year-table .free-badge { white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
   .yl.cx { color: var(--cancel); }
-  .yl .st-dot { width: 10px; height: 10px; margin-top: 4px; }
+  .yl .st-dot { width: 10px; height: 10px; }
   .yl.ex { font-weight: 600; color: var(--text); }
   .lt-wrap { display: flex; align-items: center; gap: 6px; min-width: 0; }
   .lesson-row.st-wip { background: var(--wip-bg); }
@@ -388,9 +419,11 @@
     .day-head .dn { font-size: 13px; }
     .day-head .dd { font-size: 11px; }
     .legend { font-size: 10.5px; gap: 8px; }
-    .year-table th:first-child { width: 92px; }
-    .year-table th:last-child { width: 140px; }
-    .year-table td { padding: 8px; }
+    .year-table th:first-child { width: 96px; }
+    .year-table th:last-child { width: 108px; }
+    .year-table td { padding: 6px; }
+    .yl { font-size: 11.5px; }
+    .yu > b { font-size: 12px; }
     .units-grid { grid-template-columns: 1fr 1fr; }
     .divider { display: none; }
   }
@@ -398,7 +431,7 @@
   @media (hover: none) {
     .row-tools { opacity: 1; }
     .st-dot { width: 18px; height: 18px; }
-    .yl .st-dot { width: 14px; height: 14px; margin-top: 2px; }
+    .yl .st-dot { width: 13px; height: 13px; vertical-align: -2px; }
     .btn, .seg button { min-height: 34px; }
     .chip:hover { box-shadow: none; }
   }
@@ -474,7 +507,7 @@ const subj = k => SUBJECTS[k] || SUBJECTS.sonstiges;
 const guessSubject = name => /^\s*ma/i.test(name) ? 'mathe' : /^\s*e/i.test(name) ? 'englisch' : 'sonstiges';
 const classSubj = c => subj(c && c.subject);
 // Planungsstand einer Stunde: '' (offen, weiß) · 'wip' (gelb) · 'done' (grün)
-const STATUS = { '': 'offen', wip: 'in Arbeit', done: 'fertig geplant' };
+const STATUS = { '': 'offen', wip: 'drucken', done: 'fertig geplant' };
 const STATUS_NEXT = { '': 'wip', wip: 'done', done: '' };
 // Leistungsnachweis
 const EXAMS = { test: 'Test', ka: 'Klassenarbeit' };
@@ -544,6 +577,9 @@ function emptyState() {
     placements: {},                 // 'YYYY-MM-DD|slot' -> lessonId
     freeDays: defaultFreeDays(),
     cancelled: {},                  // 'YYYY-MM-DD|slot' -> Grund
+    // Vertretungen: 'YYYY-MM-DD|slot' -> { classId } (eigene Klasse, Stunde liegt in placements)
+    //                                 oder { label, topic, note } (fremde Klasse)
+    subs: {},
     weekNotes: {}, weekEvents: {},
     view: 'week', week: START, classFilter: 'all',
   };
@@ -648,13 +684,23 @@ function classSlots(classId, from = START, to = END) {
     if (w < 1 || w > 5 || state.freeDays[d]) continue;
     const day = ttFor(d).slots[w] || {};
     for (const s of SLOTS[w]) {
-      if (day[s] !== classId) continue;
       const k = keyOf(d, s);
-      if (!state.cancelled[k]) out.push(k);
+      const sub = state.subs[k];
+      if (sub) { if (sub.classId === classId) out.push(k); continue; }   // Vertretung belegt den Slot
+      if (day[s] === classId && !state.cancelled[k]) out.push(k);
     }
   }
   return out;
 }
+// Klasse, deren Stunde in placements[key] liegt (Vertretung vor Stundenplan)
+function slotOwner(key) {
+  const sub = state.subs[key];
+  if (sub) return sub.classId || null;
+  return state.cancelled[key] ? null : classAt(dateOf(key), slotOf(key));
+}
+const subOwn = key => !!(state.subs[key] && state.subs[key].classId);
+// fixierte Stunde (z. B. Klassenarbeit) – bleibt beim Nachrücken an ihrem Platz
+const isPinnedAt = k => { const id = state.placements[k]; const i = id && lessonInfo(id); return !!(i && i.lesson.pinned); };
 
 // =====================================================================
 //  KERNLOGIK
@@ -664,13 +710,20 @@ function shiftInto(S, carries) {
   const queue = [...carries];
   for (const k of S) {
     if (!queue.length) break;
+    if (isPinnedAt(k)) { queue.forEach(id => crossedPins.add(id)); continue; }   // fixierte Termine werden übersprungen
     if (state.placements[k]) queue.push(state.placements[k]);
     state.placements[k] = queue.shift();
   }
   return queue;
 }
+const crossedPins = new Set();   // Stunden, die beim Nachrücken hinter einen fixierten Termin gerutscht sind
 function reportOverflow(rest) {
   if (rest.length) showToast(`${rest.length} Stunde(n) passen nicht mehr ins Schuljahr → wieder „in Vorbereitung“`);
+  else if (crossedPins.size) {
+    const t = [...crossedPins].map(id => lessonInfo(id)).filter(Boolean).map(i => `„${i.lesson.title}“`);
+    showToast(`📌 ${t.join(', ')} liegt jetzt hinter dem fixierten Termin – bitte prüfen`);
+  }
+  crossedPins.clear();
 }
 const lessonClass = id => { const i = lessonInfo(id); return i ? i.unit.classId : null; };
 
@@ -678,8 +731,8 @@ function planInsert(unitId, startDate, redistribute) {
   const u = state.units.find(x => x.id === unitId);
   const placed = placedMap();
   const temp = { ...state.placements };
-  if (redistribute) u.lessons.forEach(l => { if (placed[l.id]) delete temp[placed[l.id]]; });
-  const todo = u.lessons.filter(l => redistribute || !placed[l.id]);
+  if (redistribute) u.lessons.forEach(l => { if (placed[l.id] && !l.pinned) delete temp[placed[l.id]]; });
+  const todo = u.lessons.filter(l => redistribute ? !(l.pinned && placed[l.id]) : !placed[l.id]);
   const free = classSlots(u.classId, startDate).filter(k => !temp[k]);
   return { unit: u, temp, assign: todo.map((l, i) => ({ lesson: l, key: free[i] || null })) };
 }
@@ -696,8 +749,10 @@ function moveLesson(lessonId, targetKey) {
   const placed = placedMap();
   const src = placed[lessonId];
   if (src === targetKey) return;
-  if (state.cancelled[targetKey] || state.freeDays[dateOf(targetKey)]) return;
+  if ((state.cancelled[targetKey] && !subOwn(targetKey)) || state.freeDays[dateOf(targetKey)]) return;
+  if (state.subs[targetKey] && !subOwn(targetKey)) return;
   const existing = state.placements[targetKey];
+  if (existing && isPinnedAt(targetKey)) { showToast('Dort liegt ein fixierter Termin – erst lösen (📌)'); return; }
   if (src) delete state.placements[src];
   state.placements[targetKey] = lessonId;
   if (existing) {
@@ -709,7 +764,7 @@ function unplace(lessonId) { const src = placedMap()[lessonId]; if (src) delete 
 function moveStep(lessonId, dir) {
   const src = placedMap()[lessonId];
   if (!src) return;
-  const all = classSlots(lessonClass(lessonId));
+  const all = classSlots(lessonClass(lessonId)).filter(k => !isPinnedAt(k));
   const target = dir > 0 ? all.find(k => keyCmp(k, src) > 0) : [...all].reverse().find(k => keyCmp(k, src) < 0);
   if (!target) { showToast('Keine weitere Stunde dieser Klasse in dieser Richtung'); return; }
   moveLesson(lessonId, target);
@@ -717,6 +772,7 @@ function moveStep(lessonId, dir) {
   showToast(`→ ${fmtKey(target)}`);
 }
 function cancelSlot(key, reason, mode) {
+  if (state.subs[key]) { showToast('In dieser Stunde liegt eine Vertretung – erst entfernen'); return; }
   const lessonId = state.placements[key];
   delete state.placements[key];
   state.cancelled[key] = reason || 'Ausfall';
@@ -726,18 +782,24 @@ function cancelSlot(key, reason, mode) {
   }
   closePop(); save(); render();
 }
+// Folgestunden ab key je einen Slot nach vorn ziehen (bis zur ersten Lücke); fixierte bleiben stehen
+// Fixierte Termine sind eine Grenze: Stunden danach werden nicht vor die Klassenarbeit gezogen.
+function pullForward(classId, key) {
+  const S = classSlots(classId, dateOf(key)).filter(k => keyCmp(k, key) >= 0);
+  if (S[0] !== key || state.placements[key]) return;
+  for (let i = 0; i < S.length - 1; i++) {
+    if (isPinnedAt(S[i + 1])) break;
+    const next = state.placements[S[i + 1]];
+    if (!next) break;
+    state.placements[S[i]] = next;
+    delete state.placements[S[i + 1]];
+  }
+}
 function uncancel(key, pullBack) {
+  if (state.subs[key]) { showToast('Erst die Vertretung in dieser Stunde entfernen'); return; }
   delete state.cancelled[key];
   const c = classAt(dateOf(key), slotOf(key));
-  if (pullBack && c && !state.placements[key]) {
-    const S = classSlots(c, dateOf(key)).filter(k => keyCmp(k, key) >= 0);
-    for (let i = 0; i < S.length - 1; i++) {
-      const next = state.placements[S[i + 1]];
-      if (!next) break;
-      state.placements[S[i]] = next;
-      delete state.placements[S[i + 1]];
-    }
-  }
+  if (pullBack && c) pullForward(c, key);
   closePop(); save(); render();
 }
 function setFreeDay(date, label, shift) {
@@ -802,13 +864,16 @@ function fitToGrid() {
 function reflowFrom(from) {
   const byClass = {};
   Object.entries(state.placements).filter(([k]) => dateOf(k) >= from).sort((a, b) => keyCmp(a[0], b[0])).forEach(([k, id]) => {
+    const c = lessonClass(id);
+    // fixierte Termine bleiben, solange die Klasse dort weiterhin Unterricht hat
+    if (isPinnedAt(k) && c && classSlots(c, dateOf(k), dateOf(k)).includes(k)) return;
     delete state.placements[k];
-    const c = lessonClass(id); if (!c) return;
+    if (!c) return;
     (byClass[c] = byClass[c] || []).push(id);
   });
   let lost = 0;
   for (const [c, ids] of Object.entries(byClass)) {
-    const S = classSlots(c, from);
+    const S = classSlots(c, from).filter(k => !state.placements[k]);
     ids.forEach((id, i) => { if (S[i]) state.placements[S[i]] = id; else lost++; });
   }
   return lost;
@@ -817,6 +882,48 @@ function reflowFrom(from) {
 // =====================================================================
 //  RENDER
 // =====================================================================
+// ---------- Kacheln der Wochenansicht ----------
+const classTag = c => c ? `<span class="ctag"><span class="cdot" style="background:${classSubj(c).dot}"></span>${escHtml(c.name)}</span>` : '';
+const SUB_BADGE = `<span class="sub-badge" title="Vertretung">Vertr.</span>`;
+function lessonChip(lessonId, s, isSub) {
+  const info = lessonInfo(lessonId), l = info.lesson;
+  const pin = l.exam || l.pinned ? `<button class="pin-btn ${l.pinned ? 'on' : ''}" onclick="togglePin(event,'${lessonId}')" title="${l.pinned ? 'Fixiert – bleibt beim Verschieben stehen (lösen)' : 'Termin fixieren'}">📌</button>` : '';
+  return `<div class="chip st-${l.status || 'open'} ${l.exam ? 'has-exam' : ''} ${l.pinned ? 'pinned' : ''}" style="${unitVars(info.unit)}" draggable="true" ondragstart="dragStart(event,'lesson','${lessonId}')" onclick="lessonClick(event,'${lessonId}')">
+    <span class="chip-no">${slotLabel(s)}</span>${pin}
+    <span class="chip-meta">${isSub ? SUB_BADGE : ''}${examBadge(l)}<b>${escHtml(className(info.unit.classId))}</b>${info.unit.single ? '' : ` · ${escHtml(info.unit.title)} ${info.idx + 1}/${info.unit.lessons.length}`}</span>
+    <span class="chip-title">${escHtml(l.title)}</span></div>`;
+}
+function slotCell(key, s, cId, pos) {
+  const lessonId = state.placements[key];
+  const c = cId && classById(cId);
+  let classes = 'slot ' + (c ? 'cls' : 'other');
+  let inner = `<span class="slot-no">${slotLabel(s)}</span>`;
+  if (state.cancelled[key]) {
+    classes += ' cancelled';
+    inner += `${classTag(c)}<span class="cancel-tag">✕ ${escHtml(state.cancelled[key])}</span>`;
+  } else if (lessonId && lessonInfo(lessonId)) {
+    classes += ' filled droppable';
+    inner += lessonChip(lessonId, s);
+  } else {
+    classes += ' droppable';
+    if (c) inner += `${classTag(c)}<span class="slot-empty">noch nicht geplant</span>`;
+  }
+  return `<div class="${classes}" style="${pos}" data-key="${key}" onclick="slotClick(event,'${key}')">${inner}</div>`;
+}
+function subCell(key, s, full) {
+  const sub = state.subs[key];
+  const no = `<span class="slot-no">${slotLabel(s)}</span>`;
+  if (sub.classId) {
+    const lessonId = state.placements[key];
+    if (lessonId && lessonInfo(lessonId)) return `<div class="slot filled droppable sub" data-key="${key}" onclick="slotClick(event,'${key}')">${lessonChip(lessonId, s, true)}</div>`;
+    return `<div class="slot cls droppable sub" data-key="${key}" onclick="slotClick(event,'${key}')">${no}<span class="sub-stack">${SUB_BADGE}${classTag(classById(sub.classId))}<span class="slot-empty">noch nicht geplant</span></span></div>`;
+  }
+  return `<div class="slot filled sub" data-key="${key}" onclick="subClick(event,'${key}')"><div class="chip sub-foreign">
+    <span class="chip-no">${slotLabel(s)}</span>
+    <span class="chip-meta">${SUB_BADGE}<b>${escHtml(sub.label || 'Vertretung')}</b></span>
+    <span class="chip-title">${sub.topic ? escHtml(sub.topic) : '<i class="muted">Thema eintragen…</i>'}</span></div></div>`;
+}
+
 function render() {
   document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('active', b.dataset.view === state.view));
   document.getElementById('classSeg').innerHTML =
@@ -894,28 +1001,17 @@ function renderWeek() {
     SLOTS[d].forEach(s => {
       const [a, b] = periods(s);
       const key = keyOf(date, s);
-      const lessonId = state.placements[key];
-      const info = lessonId && lessonInfo(lessonId);
+      const pos = `grid-column:${d + 1};grid-row:${a + 1}/${b + 2}`;
       const cId = classAt(date, s);
-      const c = cId && classById(cId);
-      let classes = 'slot ' + (c ? 'cls' : 'other');
-      let inner = `<span class="slot-no">${slotLabel(s)}</span>`;
-      const tag = c ? `<span class="ctag"><span class="cdot" style="background:${classSubj(c).dot}"></span>${escHtml(c.name)}</span>` : '';
-      if (state.cancelled[key]) {
-        classes += ' cancelled';
-        inner += `${tag}<span class="cancel-tag">✕ ${escHtml(state.cancelled[key])}</span>`;
-      } else if (info) {
-        classes += ' filled droppable';
-        const l = info.lesson;
-        inner += `<div class="chip st-${l.status || 'open'} ${l.exam ? 'has-exam' : ''}" style="${unitVars(info.unit)}" draggable="true" ondragstart="dragStart(event,'lesson','${lessonId}')" onclick="lessonClick(event,'${lessonId}')">
-          <span class="chip-no">${slotLabel(s)}</span>
-          <span class="chip-meta">${examBadge(l)}<b>${escHtml(className(info.unit.classId))}</b>${info.unit.single ? '' : ` · ${escHtml(info.unit.title)} ${info.idx + 1}/${info.unit.lessons.length}`}</span>
-          <span class="chip-title">${escHtml(info.lesson.title)}</span></div>`;
-      } else {
-        classes += ' droppable';
-        if (c) inner += `${tag}<span class="slot-empty">noch nicht geplant</span>`;
+      const sub = state.subs[key];
+      if (sub) {
+        // Vertretung: bei ausgefallener eigener Klasse geteilt (links Ausfall, rechts Vertretung)
+        const left = cId && state.cancelled[key]
+          ? `<div class="slot cls cancelled half" onclick="slotClick(event,'${key}')"><span class="slot-no">${slotLabel(s)}</span>${classTag(classById(cId))}<span class="cancel-tag">✕ ${escHtml(state.cancelled[key])}</span></div>` : '';
+        g += `<div class="slot-split ${left ? 'two' : ''}" style="${pos}">${left}${subCell(key, s, !left)}</div>`;
+        return;
       }
-      g += `<div class="${classes}" style="grid-column:${d + 1};grid-row:${a + 1}/${b + 2}" data-key="${key}" onclick="slotClick(event,'${key}')">${inner}</div>`;
+      g += slotCell(key, s, cId, pos);
     });
   }
 
@@ -962,7 +1058,7 @@ function renderWeek() {
           <span><i style="background:${SUBJECTS.mathe.dot}"></i>Mathe</span>
           <span><i style="background:${SUBJECTS.englisch.dot}"></i>Englisch</span>
           <span><i style="background:white;border:1px solid var(--border2)"></i>offen</span>
-          <span><i style="background:var(--wip-bg);border:1px solid var(--wip-dot)"></i>in Arbeit</span>
+          <span><i style="background:var(--wip-bg);border:1px solid var(--wip-dot)"></i>drucken</span>
           <span><i style="background:var(--done-bg);border:1px solid var(--done-dot)"></i>fertig geplant</span>
           <span class="exam-badge ka" style="margin:0">KA</span><span class="exam-badge test" style="margin:0 6px 0 -8px">Test</span>
           <span><i style="background:var(--free-bg)"></i>kein Unterricht</span>
@@ -1391,7 +1487,7 @@ function deleteClass(id) {
 }
 function resetPlan() {
   if (!confirm('Alle Reihen, Einträge, Ausfälle und Notizen löschen? Klassen und Stundenplan bleiben.')) return;
-  Object.assign(state, { units: [], placements: {}, cancelled: {}, weekNotes: {}, weekEvents: {}, freeDays: defaultFreeDays() });
+  Object.assign(state, { units: [], placements: {}, cancelled: {}, subs: {}, weekNotes: {}, weekEvents: {}, freeDays: defaultFreeDays() });
   save(); render(); renderTTModal();
 }
 function resetAll() {
@@ -1435,33 +1531,102 @@ function lessonClick(e, lessonId) {
   showPop(e.currentTarget, `<h4 style="color:${classSubj(classById(info.unit.classId)).fg}">${escHtml(className(info.unit.classId))}${single ? '' : ` · ${escHtml(info.unit.title)}`}</h4>
     <div class="sub">${single ? '' : `Stunde ${info.idx + 1}/${info.unit.lessons.length} · `}${fmtKey(key)}</div>
     <label>Planungsstand</label>
-    ${choiceRow(lessonId, 'status', [['', 'offen'], ['wip', 'in Arbeit'], ['done', 'fertig']], l.status || '')}
+    ${choiceRow(lessonId, 'status', [['', 'offen'], ['wip', 'drucken'], ['done', 'fertig']], l.status || '')}
     <label>Leistungsnachweis</label>
     ${choiceRow(lessonId, 'exam', [['', 'keiner'], ['test', 'Test'], ['ka', 'Klassenarbeit']], l.exam || '')}
     <label>Stundenthema</label><input type="text" value="${escAttr(info.lesson.title)}" oninput="setLessonTitle('${lessonId}', this.value)" onkeydown="if(event.key==='Enter') closePop(true)">
     <label>Notiz</label><textarea oninput="lessonInfo('${lessonId}').lesson.note=this.value; save()" placeholder="Material, Hausaufgaben…">${escHtml(info.lesson.note || '')}</textarea>
     <div class="pop-actions">
+      <button class="btn ${l.pinned ? 'primary' : ''}" onclick="togglePin(event,'${lessonId}')">📌 ${l.pinned ? 'Fixiert – lösen' : 'Termin fixieren'}</button>
       <div class="pop-row"><button class="btn" onclick="moveStep('${lessonId}',-1)">← eine Stunde früher</button><button class="btn" onclick="moveStep('${lessonId}',1)">eine später →</button></div>
       <div class="pop-sep"></div>
-      <label style="margin-top:2px">Stunde fällt aus – Grund</label><input type="text" id="cReason" value="Ausfall">
+      ${state.subs[key] ? subRemoveButtons(key) : `<label style="margin-top:2px">Stunde fällt aus – Grund</label><input type="text" id="cReason" value="Ausfall">
       <button class="btn" onclick="cancelSlot('${key}', document.getElementById('cReason').value, 'shift')">✕ Fällt aus · Folgestunden rücken nach</button>
-      <button class="btn" onclick="cancelSlot('${key}', document.getElementById('cReason').value, 'park')">✕ Fällt aus · Stunde ${single ? 'ohne Termin aufheben' : 'zurück in die Reihe'}</button>
+      <button class="btn" onclick="cancelSlot('${key}', document.getElementById('cReason').value, 'park')">✕ Fällt aus · Stunde ${single ? 'ohne Termin aufheben' : 'zurück in die Reihe'}</button>`}
       <div class="pop-sep"></div>
       ${single ? `<button class="btn danger" onclick="deleteSingle('${info.unit.id}')">Einzelstunde löschen</button>`
         : `<button class="btn danger" onclick="unplace('${lessonId}'); closePop(); save(); render()">Aus dem Planer nehmen</button>`}
     </div>`);
 }
+// ---------- Vertretungen ----------
+function subForm(key) {
+  return `<div class="pop-actions"><div class="pop-sep"></div></div>
+    <label>Vertretung in dieser Stunde</label>
+    <select id="sbClass" onchange="subFormToggle()"><option value="">andere Klasse (nicht meine)</option>${state.classes.map(c => `<option value="${c.id}">${escHtml(c.name)} – zusätzliche Stunde</option>`).join('')}</select>
+    <input type="text" id="sbLabel" placeholder="Klasse / Fach, z. B. Ma 7e">
+    <label class="check" id="sbPullRow" style="display:none"><input type="checkbox" id="sbPull" checked onchange="subFormToggle()"> Folgestunden der Reihe rücken eine Stunde vor</label>
+    <input type="text" id="sbTopic" placeholder="Stundenthema (optional)">
+    <div class="pop-actions"><button class="btn" onclick="addSubFromForm('${key}')">＋ Vertretung eintragen</button></div>`;
+}
+function subFormToggle() {
+  const own = !!document.getElementById('sbClass').value;
+  const pull = document.getElementById('sbPull').checked;
+  document.getElementById('sbLabel').style.display = own ? 'none' : '';
+  document.getElementById('sbPullRow').style.display = own ? '' : 'none';
+  document.getElementById('sbTopic').style.display = own && pull ? 'none' : '';
+}
+function addSubFromForm(key) {
+  const classId = document.getElementById('sbClass').value;
+  const topic = document.getElementById('sbTopic').value.trim();
+  if (classId) {
+    const pull = document.getElementById('sbPull').checked;
+    state.subs[key] = { classId };
+    if (pull) pullForward(classId, key);
+    else if (topic) { addSingle(key, classId, topic); return; }
+    closePop(); save(); render();
+    showToast(pull ? (state.placements[key] ? 'Vertretung eingetragen – Folgestunden sind vorgerückt' : 'Vertretung eingetragen') : 'Vertretung eingetragen');
+  } else {
+    const label = document.getElementById('sbLabel').value.trim();
+    if (!label) { showToast('Bitte Klasse / Fach eintragen'); return; }
+    state.subs[key] = { label, topic, note: '' };
+    closePop(); save(); render();
+  }
+}
+// mode 'back': Stunde der eigenen Klasse geht zurück, Folgestunden rücken nach hinten · 'park': Stunde zurück in die Reihe
+function removeSub(key, mode) {
+  const sub = state.subs[key]; if (!sub) return;
+  const id = sub.classId ? state.placements[key] : null;
+  if (id) delete state.placements[key];
+  delete state.subs[key];
+  if (id && mode === 'back') reportOverflow(shiftInto(classSlots(sub.classId, dateOf(key)).filter(k => keyCmp(k, key) > 0), [id]));
+  closePop(); save(); render();
+}
+function setSubField(key, field, v) { state.subs[key][field] = v; save(); }
+function subClick(e, key) {
+  e.stopPropagation();
+  const sub = state.subs[key];
+  showPop(e.currentTarget, `<h4>Vertretung</h4><div class="sub">${fmtKey(key)}</div>
+    <label>Klasse / Fach</label><input type="text" value="${escAttr(sub.label || '')}" oninput="setSubField('${key}','label',this.value)">
+    <label>Stundenthema</label><input type="text" value="${escAttr(sub.topic || '')}" placeholder="z. B. Übung" oninput="setSubField('${key}','topic',this.value)" onkeydown="if(event.key==='Enter') closePop(true)">
+    <label>Notiz</label><textarea oninput="setSubField('${key}','note',this.value)" placeholder="Material, Aufgaben…">${escHtml(sub.note || '')}</textarea>
+    <div class="pop-actions"><div class="pop-sep"></div><button class="btn danger" onclick="removeSub('${key}')">Vertretung löschen</button></div>`);
+}
+const subRemoveButtons = key => `<button class="btn" onclick="removeSub('${key}','back')">Vertretung entfernen · Stunden rücken wieder zurück</button>
+  <button class="btn danger" onclick="removeSub('${key}','park')">Vertretung entfernen · Stunde zurück in die Reihe</button>`;
+function togglePin(e, lessonId) {
+  e.stopPropagation();
+  const l = lessonInfo(lessonId).lesson;
+  l.pinned = !l.pinned;
+  save(); if (popOpen) closePop(); render();
+  showToast(l.pinned ? '📌 Termin fixiert – bleibt beim Verschieben stehen' : 'Termin nicht mehr fixiert');
+}
+
 function slotClick(e, key) {
   const el = e.currentTarget;
-  const cId = classAt(dateOf(key), slotOf(key));
-  if (state.cancelled[key]) {
-    showPop(el, `<h4>${fmtKey(key)}</h4><div class="sub">fällt aus: ${escHtml(state.cancelled[key])}</div>
+  e.stopPropagation();
+  const sub = state.subs[key];
+  if (sub && !sub.classId && !el.classList.contains('half')) { subClick(e, key); return; }
+  const regular = classAt(dateOf(key), slotOf(key));
+  if (state.cancelled[key] && (!sub || el.classList.contains('half'))) {
+    showPop(el, `<h4>${fmtKey(key)}</h4><div class="sub">${regular ? escHtml(className(regular)) + ' · ' : ''}fällt aus: ${escHtml(state.cancelled[key])}</div>
       <div class="pop-actions">
-        ${cId ? `<button class="btn" onclick="uncancel('${key}', true)">Ausfall aufheben · Folgestunden rücken wieder vor</button>` : ''}
-        <button class="btn" onclick="uncancel('${key}', false)">Ausfall aufheben · Stunde bleibt leer</button>
-      </div>`);
+        ${sub ? `<div class="sub">In dieser Stunde liegt eine Vertretung – zum Aufheben des Ausfalls erst die Vertretung entfernen.</div>`
+          : `${regular ? `<button class="btn" onclick="uncancel('${key}', true)">Ausfall aufheben · Folgestunden rücken wieder vor</button>` : ''}
+        <button class="btn" onclick="uncancel('${key}', false)">Ausfall aufheben · Stunde bleibt leer</button>`}
+      </div>${sub ? '' : subForm(key)}`);
     return;
   }
+  const cId = sub ? sub.classId : regular;
   const placed = placedMap();
   // offene Stunden – die der Klasse dieses Slots zuerst
   const groups = state.classes.slice().sort((a, b) => (b.id === cId) - (a.id === cId)).map(c => {
@@ -1469,7 +1634,7 @@ function slotClick(e, key) {
     state.units.filter(u => u.classId === c.id).forEach(u => u.lessons.forEach((l, i) => { if (!placed[l.id]) opts.push(`<option value="${l.id}">${u.single ? escHtml(l.title) : `${escHtml(u.title)} · ${i + 1}. ${escHtml(l.title)}`}</option>`); }));
     return opts.length ? `<optgroup label="${escAttr(c.name)}">${opts.join('')}</optgroup>` : '';
   }).join('');
-  showPop(el, `<h4>${fmtKey(key)}</h4><div class="sub">${cId ? `${escHtml(className(cId))} · noch frei` : 'kein Unterricht laut Stundenplan (z. B. Vertretung)'}</div>
+  showPop(el, `<h4>${fmtKey(key)}</h4><div class="sub">${sub ? 'Vertretung · ' : ''}${cId ? `${escHtml(className(cId))} · noch frei` : 'kein Unterricht laut Stundenplan'}</div>
     ${groups ? `<label>Stunde einsetzen</label><select id="popLesson">${groups}</select>
       <div class="pop-actions"><button class="btn primary" onclick="moveLesson(document.getElementById('popLesson').value,'${key}'); closePop(); save(); render()">Einsetzen</button></div>`
       : `<div class="sub">Keine offenen Stunden aus Reihen.</div>`}
@@ -1478,8 +1643,10 @@ function slotClick(e, key) {
     <input type="text" id="sgTitle" placeholder="z. B. Übung" onkeydown="if(event.key==='Enter') document.getElementById('sgBtn').click()">
     ${cId ? `<input type="hidden" id="sgClass" value="${cId}">` : `<select id="sgClass">${state.classes.map(c => `<option value="${c.id}">${escHtml(c.name)}</option>`).join('')}</select>`}
     <div class="pop-actions"><button class="btn ${groups ? '' : 'primary'}" id="sgBtn" onclick="addSingle('${key}', document.getElementById('sgClass').value, document.getElementById('sgTitle').value)">＋ Einzelstunde eintragen</button></div>` : ''}
-    ${cId ? `<div class="pop-actions"><div class="pop-sep"></div><label style="margin-top:2px">Fällt aus – Grund</label><input type="text" id="cReason" value="Ausfall">
-      <button class="btn" onclick="cancelSlot('${key}', document.getElementById('cReason').value, 'park')">✕ Als Ausfall markieren</button></div>` : ''}`);
+    ${sub ? `<div class="pop-actions"><div class="pop-sep"></div>${subRemoveButtons(key)}</div>`
+      : cId ? `<div class="pop-actions"><div class="pop-sep"></div><label style="margin-top:2px">Fällt aus – Grund</label><input type="text" id="cReason" value="Ausfall">
+      <button class="btn" onclick="cancelSlot('${key}', document.getElementById('cReason').value, 'park')">✕ Als Ausfall markieren</button></div>`
+      : subForm(key)}`);
 }
 function dayClick(e, date) {
   e.stopPropagation();
